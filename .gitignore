@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+frontend/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -16,6 +17,7 @@
 # next.js
 /.next/
 /out/
+frontend/.next/
 
 # production
 /build
@@ -32,6 +34,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!**/.env.example
 
 # vercel
 .vercel
@@ -39,3 +43,25 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+backend/venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+.pytest_cache/
+
+# runtime data
+dump.rdb
+backend/logs/
+backend/eval/results/
+
+# claude code
+CLAUDE.md
+AGENTS.md
+.claude/
