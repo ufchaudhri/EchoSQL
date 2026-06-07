@@ -1,0 +1,406 @@
+{
+  "uid": "echosql-main",
+  "title": "EchoSQL Observability",
+  "description": "Query pipeline metrics: latency, cache performance, LLM timing, and log streams",
+  "tags": ["echosql"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Queries",
+      "description": "query.complete events in the selected time range",
+      "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "sum(count_over_time({job=\"echosql\", event=\"query.complete\"} [$__range]))",
+        "instant": true,
+        "queryType": "instant",
+        "legendFormat": ""
+      }],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"fixedColor": "blue", "mode": "fixed"},
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "NL Cache Hit Rate",
+      "description": "Fraction of NL-level cache lookups that hit. Low values mean the LLM is called every time.",
+      "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "sum(count_over_time({job=\"echosql\", event=\"cache.nl_lookup\"} | json | hit=`true` [$__range])) / sum(count_over_time({job=\"echosql\", event=\"cache.nl_lookup\"} [$__range])) * 100",
+        "instant": true,
+        "queryType": "instant",
+        "legendFormat": ""
+      }],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red",    "value": null},
+              {"color": "yellow", "value": 20},
+              {"color": "green",  "value": 50}
+            ]
+          },
+          "unit": "percent",
+          "max": 100,
+          "min": 0,
+          "noValue": "N/A"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Avg Query Latency",
+      "description": "Average end-to-end latency across all completed queries",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "avg_over_time({job=\"echosql\", event=\"query.complete\"} | json | unwrap total_ms [$__range])",
+        "instant": true,
+        "queryType": "instant",
+        "legendFormat": ""
+      }],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green",  "value": null},
+              {"color": "yellow", "value": 1000},
+              {"color": "red",    "value": 3000}
+            ]
+          },
+          "unit": "ms",
+          "noValue": "N/A"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Errors",
+      "description": "ERROR-level log lines in the selected time range",
+      "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "sum(count_over_time({job=\"echosql\", level=\"ERROR\"} [$__range]))",
+        "instant": true,
+        "queryType": "instant",
+        "legendFormat": ""
+      }],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "red",   "value": 1}
+            ]
+          },
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Query Rate",
+      "description": "Queries completed per second over time",
+      "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "sum(rate({job=\"echosql\", event=\"query.complete\"}[$__interval]))",
+        "legendFormat": "queries/s",
+        "queryType": "range"
+      }],
+      "options": {
+        "tooltip": {"mode": "single"},
+        "legend": {"showLegend": true, "displayMode": "list"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"fixedColor": "blue", "mode": "fixed"},
+          "custom": {"lineWidth": 2, "fillOpacity": 15, "gradientMode": "none"},
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Error Rate",
+      "description": "ERROR-level log lines per second",
+      "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "sum(rate({job=\"echosql\", level=\"ERROR\"}[$__interval]))",
+        "legendFormat": "errors/s",
+        "queryType": "range"
+      }],
+      "options": {
+        "tooltip": {"mode": "single"},
+        "legend": {"showLegend": true, "displayMode": "list"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"fixedColor": "red", "mode": "fixed"},
+          "custom": {"lineWidth": 2, "fillOpacity": 15},
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Query Latency (ms)",
+      "description": "Average end-to-end query latency per interval",
+      "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "avg_over_time({job=\"echosql\", event=\"query.complete\"} | json | unwrap total_ms [$__interval])",
+        "legendFormat": "avg total_ms",
+        "queryType": "range"
+      }],
+      "options": {
+        "tooltip": {"mode": "single"},
+        "legend": {"showLegend": true, "displayMode": "list"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"fixedColor": "green", "mode": "fixed"},
+          "custom": {"lineWidth": 2, "fillOpacity": 15},
+          "unit": "ms"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "LLM Latency (ms)",
+      "description": "Average Ollama inference latency per interval — only shows on cache-miss queries",
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "avg_over_time({job=\"echosql\", event=\"llm.complete\"} | json | unwrap latency_ms [$__interval])",
+        "legendFormat": "avg LLM latency",
+        "queryType": "range"
+      }],
+      "options": {
+        "tooltip": {"mode": "single"},
+        "legend": {"showLegend": true, "displayMode": "list"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"fixedColor": "orange", "mode": "fixed"},
+          "custom": {"lineWidth": 2, "fillOpacity": 15},
+          "unit": "ms"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Cache Performance — NL Hits vs Misses",
+      "description": "Each query does an NL-level cache lookup. A hit skips the LLM entirely.",
+      "gridPos": {"x": 0, "y": 20, "w": 24, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "expr": "sum(rate({job=\"echosql\", event=\"cache.nl_lookup\"} | json | hit=`true` [$__interval]))",
+          "legendFormat": "hits",
+          "queryType": "range"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "expr": "sum(rate({job=\"echosql\", event=\"cache.nl_lookup\"} | json | hit=`false` [$__interval]))",
+          "legendFormat": "misses",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "tooltip": {"mode": "multi"},
+        "legend": {"showLegend": true, "displayMode": "list"}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {"lineWidth": 2, "fillOpacity": 15},
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Recent Query Completions",
+      "description": "One line per completed query — shows sql, row_count, total_ms, from_cache",
+      "gridPos": {"x": 0, "y": 28, "w": 24, "h": 10},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "{job=\"echosql\", event=\"query.complete\"}",
+        "queryType": "range"
+      }],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      }
+    },
+
+    {
+      "id": 11,
+      "type": "logs",
+      "title": "LLM Completions",
+      "description": "One line per Ollama inference call — shows model, latency_ms, sql (preview), success",
+      "gridPos": {"x": 0, "y": 38, "w": 24, "h": 10},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "{job=\"echosql\", event=\"llm.complete\"}",
+        "queryType": "range"
+      }],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      }
+    },
+
+    {
+      "id": 12,
+      "type": "logs",
+      "title": "Errors",
+      "description": "All ERROR-level log lines",
+      "gridPos": {"x": 0, "y": 48, "w": 24, "h": 10},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "{job=\"echosql\", level=\"ERROR\"}",
+        "queryType": "range"
+      }],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      }
+    },
+
+    {
+      "id": 13,
+      "type": "logs",
+      "title": "All Logs",
+      "description": "Full EchoSQL log stream. Click any trace_id to jump to the trace in Tempo.",
+      "gridPos": {"x": 0, "y": 58, "w": 24, "h": 12},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [{
+        "datasource": {"type": "loki", "uid": "loki"},
+        "expr": "{job=\"echosql\"}",
+        "queryType": "range"
+      }],
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      }
+    }
+
+  ]
+}

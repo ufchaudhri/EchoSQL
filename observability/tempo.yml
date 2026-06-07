@@ -1,0 +1,30 @@
+server:
+  http_listen_port: 3200
+
+# Accept OTel traces from the FastAPI backend over HTTP
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+
+# Store traces on the container's local filesystem
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo/blocks
+    wal:
+      path: /tmp/tempo/wal
+
+# How long to keep traces (72 h is comfortable for local dev)
+compactor:
+  compaction:
+    block_retention: 72h
+
+# Trace search index
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
+  max_block_duration: 5m

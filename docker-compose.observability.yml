@@ -1,0 +1,73 @@
+version: "3.8"
+
+# EchoSQL observability stack — Grafana + Loki + Promtail + Tempo
+#
+# Start:  docker compose -f docker-compose.observability.yml up -d
+# Stop:   docker compose -f docker-compose.observability.yml down
+#
+# Grafana UI:  http://localhost:3001  (login: admin / admin)
+#
+# Useful LogQL queries in Grafana → Explore → Loki:
+#   All logs:          {job="echosql"}
+#   Errors only:       {job="echosql", level="ERROR"}
+#   Slow queries:      {job="echosql"} | json | total_ms > 2000
+#   Trace by id:       {job="echosql"} | json | trace_id="<paste id>"
+#   LLM completions:   {job="echosql"} | json | event="llm.complete"
+#   Cache misses:      {job="echosql"} | json | event=~"cache\\..*" | hit="False"
+#   DB executions:     {job="echosql"} | json | event="db.complete"
+
+services:
+
+  # ── Loki — log aggregation backend ─────────────────────────────────────────
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: echosql-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  # ── Promtail — tails the backend JSONL log files and ships to Loki ─────────
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: echosql-promtail
+    volumes:
+      - ./backend/logs:/logs:ro          # mount the backend logs directory read-only
+      - ./observability/promtail.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ── Tempo — distributed trace backend (receives OTLP from the backend) ─────
+  tempo:
+    image: grafana/tempo:2.4.0
+    container_name: echosql-tempo
+    ports:
+      - "3200:3200"    # Tempo HTTP API (Grafana datasource)
+      - "4318:4318"    # OTLP HTTP receiver (set OTEL_EXPORTER_OTLP_ENDPOINT in .env)
+    volumes:
+      - ./observability/tempo.yml:/etc/tempo/config.yml:ro
+    command: -config.file=/etc/tempo/config.yml
+    restart: unless-stopped
+
+  # ── Grafana — dashboards and log/trace exploration ──────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: echosql-grafana
+    ports:
+      - "3001:3000"    # 3001 on host to avoid conflict with Next.js on 3000
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
+      - tempo
+    restart: unless-stopped
+
+volumes:
+  grafana-data:
