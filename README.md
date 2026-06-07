@@ -2,6 +2,8 @@
 
 EchoSQL converts natural-language questions into SQL, executes them against a local PostgreSQL banking database, and renders the results in a browser — all without any data leaving your machine.
 
+![EchoSQL Query Console](docs/screenshot.png)
+
 ## Components
 
 | Directory | Role | Port |
