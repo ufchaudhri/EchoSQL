@@ -495,3 +495,23 @@ echosql/
 | Node.js | 18+ | Frontend build/runtime | Yes |
 | Docker | 24+ | Observability stack (Grafana/Loki/Tempo) | No (optional) |
 ```
+````
+This is the description of what the code block changes:
+<changeDescription>
+Add input guardrail step to the query pipeline in ARCHITECTURE.md.
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+## 3. The Query Pipeline
+
+The query pipeline consists of 7 steps:
+
+1.  **Input Guardrail**: Checks if the user query is data-related. If not, returns a friendly message.
+2.  **NL Cache Lookup**: MD5 hash of the normalised query is checked in Redis. A hit skips all remaining steps.
+3.  **LLM SQL Generation**: Ollama runs qwen:7b-chat locally with a schema-aware system prompt to produce a SELECT statement.
+# ...existing code...
+```
+<userPrompt>
+Provide the fully rewritten file, incorporating the suggested code change. You must produce the complete file.
+</userPrompt>
