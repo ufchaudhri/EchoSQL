@@ -84,3 +84,10 @@ python -m eval.run_eval --no-llm-eval   # skip LLM self-assessment (faster)
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a complete technical reference and [QUICKSTART.md](QUICKSTART.md) for step-by-step setup.
+
+## Features
+
+- **Natural Language to SQL**: Translates plain English questions into SQL queries.
+- **Input Guardrail**: Validates that queries are data-related before processing.
+- **Local-First**: All AI inference runs locally via Ollama.
+- **Observability**: Real-time monitoring of service health and latency.

@@ -494,3 +494,4 @@ echosql/
 | Python | 3.10+ | Backend runtime | Yes |
 | Node.js | 18+ | Frontend build/runtime | Yes |
 | Docker | 24+ | Observability stack (Grafana/Loki/Tempo) | No (optional) |
+```
