@@ -602,7 +602,7 @@ function SchemaHelpTab() {
 
       <div className="section-title mb-8">Database Schema</div>
       <div className="schema-accordion">
-        {schema.map((t) => (
+        {Array.isArray(schema) ? schema.map((t) => (
           <div key={t.table_name}>
             <button
               className={`schema-table-btn ${openTable === t.table_name ? "open" : ""}`}
@@ -639,7 +639,7 @@ function SchemaHelpTab() {
               </div>
             )}
           </div>
-        ))}
+        )) : <p>Loading schema...</p>}
       </div>
     </div>
   );
