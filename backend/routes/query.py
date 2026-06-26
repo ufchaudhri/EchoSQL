@@ -94,6 +94,25 @@ async def run_query(req: QueryRequest, explain: bool = False):
     if not user_query:
         raise HTTPException(status_code=400, detail="query field cannot be empty")
 
+    # Simple guardrail: check if query is data-related
+    data_keywords = [ "balance", "transaction", "customer", "account", "branch", "fee", "deposit", "withdraw", "failed", "total", "list", "show", "how many", "what is" ]
+    if not any(keyword in user_query.lower() for keyword in data_keywords):
+        return {
+            "sql": "",
+            "rows": [],
+            "row_count": 0,
+            "execution_time_ms": 0,
+            "from_cache": False,
+            "source_tables": [],
+            "pipeline_steps": [],
+            "evaluation": {
+                "score": 0,
+                "match": "no",
+                "explanation": "I'm sorry, I can only answer questions related to your banking data. Please try asking about accounts, transactions, or customers.",
+                "executive_summary": "Non-data related query detected."
+            }
+        }
+
     cache = get_redis_cache()
     pipeline_steps: List[Dict] = []
 

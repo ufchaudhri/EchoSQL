@@ -8,10 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ==================== Database ====================
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:password@localhost:5432/echosql"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
 
 # ==================== Redis ====================
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")

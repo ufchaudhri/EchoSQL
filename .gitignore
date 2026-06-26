@@ -19,6 +19,13 @@ frontend/node_modules/
 /out/
 frontend/.next/
 
+# environment variables
+backend/.env
+
+# logs
+backend/logs/*.jsonl
+*.log
+
 # production
 /build
 
@@ -48,6 +55,15 @@ next-env.d.ts
 backend/venv/
 __pycache__/
 **/__pycache__/
+
+# database
+/pgdata
+backend/logs/*.jsonl
+
+# database
+/pgdata
+backend/logs/*.jsonl
+
 *.pyc
 *.pyo
 *.pyd
